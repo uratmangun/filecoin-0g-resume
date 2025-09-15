@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk'
 
 export default function Home() {
-  const [copied, setCopied] = useState<string | null>(null);
-
   useEffect(() => {
     const initializeSdk = async () => {
       await sdk.actions.ready();
@@ -13,86 +11,91 @@ export default function Home() {
     initializeSdk();
   }, []);
 
-  const copyToClipboard = async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
-  const commands = [
+  const steps = [
     {
-      id: 'create',
-      title: '1. Create a new repository from this template',
-      command: 'gh repo create your-new-repo --template uratmangun/nextjs-mcp --public --clone',
-      description: 'Creates a new public repository using this as a template and clones it locally'
+      title: 'Upload or write resume',
+      description: 'Start with your existing resume or draft a new one in the app. Mock data: John Doe, 5+ yrs experience.',
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-10 w-10 text-teal-700"
+          aria-hidden
+        >
+          <path d="M7 3h6l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M13 3v5h5" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M8.5 13H15.5M8.5 16H15.5M8.5 19H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      )
     },
     {
-      id: 'clone',
-      title: '2. Or clone an existing repository created from this template',
-      command: 'gh repo clone username/your-repo-name',
-      description: 'Clones an existing repository to your local machine'
+      title: 'Paste job description',
+      description: 'Provide a target role JD for comparison. Mock: Frontend Engineer, React + TypeScript.',
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-10 w-10 text-teal-700"
+          aria-hidden
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M7 8H17M7 12h10M7 16h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      )
     },
     {
-      id: 'make-public',
-      title: '3. Make an existing repository public (if needed)',
-      command: 'gh repo edit --visibility public',
-      description: 'Changes repository visibility to public (run inside the repo directory)'
+      title: 'AI analyze + advice',
+      description: 'We compare your resume to the JD and suggest improvements to boost hiring probability. Mock: add metrics, tailor keywords.',
+      icon: (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-10 w-10 text-teal-700"
+          aria-hidden
+        >
+          <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      )
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 p-8">
-      <div className="max-w-4xl mx-auto">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-            Next.js MCP Template
+    <div className="min-h-screen bg-gradient-to-br from-teal-500 to-teal-400 dark:from-teal-900 dark:to-teal-800 flex items-start justify-center">
+      <div className="max-w-6xl px-6 md:px-8 pt-6 md:pt-8 pb-16 md:pb-24 mx-auto text-center">
+        <header>
+          <h1 className="text-white text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.1]">
+            Filecoin and 0g resume generator and ai analyzer
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-300">
-            Use this to create your next Next.js MCP apps
+          <p className="mt-8 text-white/90 text-lg md:text-2xl">
+            make a resume and analyze it against a job description the ai will give you an advice and what you need to add so that your hiring probability getting higher
           </p>
         </header>
 
-        <div className="space-y-6">
-          {commands.map((cmd) => (
-            <div
-              key={cmd.id}
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-slate-200 dark:border-slate-700"
-            >
-              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-3">
-                {cmd.title}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 mb-4">
-                {cmd.description}
-              </p>
-              <div className="relative">
-                <pre className="bg-slate-900 dark:bg-slate-950 text-green-400 p-4 rounded-lg overflow-x-auto font-mono text-sm">
-                  <code>{cmd.command}</code>
-                </pre>
-                <button
-                  onClick={() => copyToClipboard(cmd.command, cmd.id)}
-                  className="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs transition-colors"
-                >
-                  {copied === cmd.id ? '✓ Copied!' : 'Copy'}
-                </button>
+        <section className="mt-12">
+          <h2 className="text-white text-2xl md:text-3xl font-semibold">How this work?</h2>
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {steps.map((s) => (
+              <div
+                key={s.title}
+                className="group rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-teal-100/60 dark:border-teal-800/40 shadow-md p-6 text-left"
+              >
+                <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-900/40 p-3">
+                  {s.icon}
+                </div>
+                <h3 className="text-slate-800 dark:text-slate-100 text-lg font-semibold">
+                  {s.title}
+                </h3>
+                <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">
+                  {s.description}
+                </p>
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-          <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-3">
-            📋 Prerequisites
-          </h3>
-          <ul className="space-y-2 text-blue-700 dark:text-blue-300">
-            <li>• Install GitHub CLI: <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">brew install gh</code> or <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">winget install GitHub.cli</code></li>
-            <li>• Authenticate: <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">gh auth login</code></li>
-            <li>• Replace <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">your-new-repo</code> and <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">username/your-repo-name</code> with actual names</li>
-          </ul>
-        </div>
-
-        <footer className="text-center mt-12 text-slate-500 dark:text-slate-400">
-          <p>After creating your repository, run <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">pnpm dev</code> to start development!</p>
-        </footer>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
