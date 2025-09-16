@@ -1,7 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk'
+
+type ProjectEntry = {
+  title: string;
+  link: string;
+  description: string;
+};
+
+type AchievementEntry = {
+  title: string;
+  link: string;
+  description: string;
+};
+
+type WorkEntry = {
+  company: string;
+  dateRange: string;
+  description: string;
+};
 
 export default function Home() {
   useEffect(() => {
@@ -11,57 +29,148 @@ export default function Home() {
     initializeSdk();
   }, []);
 
-  const steps = [
-    {
-      title: 'Upload or write resume',
-      description: 'Start with your existing resume or draft a new one in the app. Mock data: John Doe, 5+ yrs experience.',
-      icon: (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-10 w-10 text-teal-700"
-          aria-hidden
-        >
-          <path d="M7 3h6l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M13 3v5h5" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M8.5 13H15.5M8.5 16H15.5M8.5 19H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      )
-    },
-    {
-      title: 'Paste job description',
-      description: 'Provide a target role JD for comparison. Mock: Frontend Engineer, React + TypeScript.',
-      icon: (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-10 w-10 text-teal-700"
-          aria-hidden
-        >
-          <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M7 8H17M7 12h10M7 16h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      )
-    },
-    {
-      title: 'AI analyze + advice',
-      description: 'We compare your resume to the JD and suggest improvements to boost hiring probability. Mock: add metrics, tailor keywords.',
-      icon: (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-10 w-10 text-teal-700"
-          aria-hidden
-        >
-          <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
-        </svg>
-      )
+  const [resumeBasics, setResumeBasics] = useState({
+    name: '',
+    email: '',
+    github: ''
+  });
+  const [workHistoryEntries, setWorkHistoryEntries] = useState<WorkEntry[]>([
+    { company: '', dateRange: '', description: '' }
+  ]);
+  const [projectEntries, setProjectEntries] = useState<ProjectEntry[]>([
+    { title: '', link: '', description: '' }
+  ]);
+  const [achievementEntries, setAchievementEntries] = useState<AchievementEntry[]>([
+    { title: '', link: '', description: '' }
+  ]);
+
+  const handleBasicChange = (field: keyof typeof resumeBasics, value: string) => {
+    setResumeBasics((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleWorkEntryChange = (index: number, field: keyof WorkEntry, value: string) => {
+    setWorkHistoryEntries((entries) => {
+      const next = [...entries];
+      next[index] = {
+        ...next[index],
+        [field]: value
+      };
+      return next;
+    });
+  };
+
+  const addWorkEntry = () => {
+    setWorkHistoryEntries((entries) => [
+      ...entries,
+      { company: '', dateRange: '', description: '' }
+    ]);
+  };
+
+  const removeWorkEntry = (index: number) => {
+    setWorkHistoryEntries((entries) => {
+      if (entries.length === 1) {
+        return entries;
+      }
+
+      return entries.filter((_, idx) => idx !== index);
+    });
+  };
+
+  const handleProjectEntryChange = (index: number, field: keyof ProjectEntry, value: string) => {
+    setProjectEntries((entries) => {
+      const next = [...entries];
+      next[index] = {
+        ...next[index],
+        [field]: value
+      };
+      return next;
+    });
+  };
+
+  const addProjectEntry = () => {
+    setProjectEntries((entries) => [
+      ...entries,
+      { title: '', link: '', description: '' }
+    ]);
+  };
+
+  const removeProjectEntry = (index: number) => {
+    setProjectEntries((entries) => {
+      if (entries.length === 1) {
+        return entries;
+      }
+
+      return entries.filter((_, idx) => idx !== index);
+    });
+  };
+
+  const handleAchievementEntryChange = (index: number, field: keyof AchievementEntry, value: string) => {
+    setAchievementEntries((entries) => {
+      const next = [...entries];
+      next[index] = {
+        ...next[index],
+        [field]: value
+      };
+      return next;
+    });
+  };
+
+  const addAchievementEntry = () => {
+    setAchievementEntries((entries) => [
+      ...entries,
+      { title: '', link: '', description: '' }
+    ]);
+  };
+
+  const removeAchievementEntry = (index: number) => {
+    setAchievementEntries((entries) => {
+      if (entries.length === 1) {
+        return entries;
+      }
+
+      return entries.filter((_, idx) => idx !== index);
+    });
+  };
+
+  const baseFieldClassName =
+    'w-full rounded-lg border border-teal-200 bg-white/80 px-4 py-3 text-slate-800 shadow-sm transition focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-300/70 dark:border-teal-700 dark:bg-slate-950/40 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-teal-500 dark:focus:ring-teal-500/40';
+  const tallTextAreaClassName = baseFieldClassName + ' min-h-[140px]';
+  const compactTextAreaClassName = baseFieldClassName + ' min-h-[120px]';
+  const addButtonClassName =
+    'inline-flex items-center justify-center gap-2 rounded-lg border border-teal-200/80 bg-white/80 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm transition hover:border-teal-300 hover:text-teal-600 dark:border-teal-800/60 dark:bg-slate-950/40 dark:text-teal-200 dark:hover:border-teal-700 dark:hover:text-teal-100';
+  const removeButtonClassName =
+    'self-end text-xs font-medium text-teal-700 underline-offset-2 hover:text-teal-600 hover:underline dark:text-teal-200 dark:hover:text-teal-100';
+
+
+  const hasContent = (value: string) => value.trim().length > 0;
+  const normalizedWorkEntries = workHistoryEntries.filter((entry) =>
+    [entry.company, entry.dateRange, entry.description].some(hasContent)
+  );
+  const normalizedProjectEntries = projectEntries.filter((entry) =>
+    [entry.title, entry.link, entry.description].some(hasContent)
+  );
+  const normalizedAchievementEntries = achievementEntries.filter((entry) =>
+    [entry.title, entry.link, entry.description].some(hasContent)
+  );
+  const previewHasBasics = Object.values(resumeBasics).some(hasContent);
+  const previewHasContent =
+    previewHasBasics ||
+    normalizedWorkEntries.length > 0 ||
+    normalizedProjectEntries.length > 0 ||
+    normalizedAchievementEntries.length > 0;
+
+  const formatUrl = (url: string) => {
+    if (!hasContent(url)) {
+      return '';
     }
-  ];
+
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-500 to-teal-400 dark:from-teal-900 dark:to-teal-800 flex items-start justify-center">
@@ -75,25 +184,398 @@ export default function Home() {
           </p>
         </header>
 
-        <section className="mt-12">
-          <h2 className="text-white text-2xl md:text-3xl font-semibold">How this work?</h2>
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {steps.map((s) => (
-              <div
-                key={s.title}
-                className="group rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-teal-100/60 dark:border-teal-800/40 shadow-md p-6 text-left"
-              >
-                <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-900/40 p-3">
-                  {s.icon}
+        <section className="mt-12 text-left">
+          <div className="rounded-2xl bg-white/90 dark:bg-slate-900/95 border border-teal-100/50 dark:border-teal-900/60 shadow-xl shadow-teal-900/10 px-6 py-8 md:px-8 md:py-10">
+            <h2 className="text-3xl font-semibold text-teal-900 dark:text-teal-100">Create your resume</h2>
+            <p className="mt-3 text-base text-slate-600 dark:text-slate-300">Fill out the essentials below to craft a tailored resume that pairs perfectly with our AI analysis.</p>
+            <form className="mt-8 grid gap-8 text-left">
+              <div className="grid gap-2 md:grid-cols-2 md:gap-6">
+                <div className="grid gap-2">
+                  <label htmlFor="resume-name" className="text-sm font-medium text-teal-900 dark:text-teal-100">Name</label>
+                  <input
+                    id="resume-name"
+                    name="name"
+                    type="text"
+                    placeholder="John Doe"
+                    className={baseFieldClassName}
+                    value={resumeBasics.name}
+                    onChange={(event) => handleBasicChange('name', event.target.value)}
+                  />
                 </div>
-                <h3 className="text-slate-800 dark:text-slate-100 text-lg font-semibold">
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">
-                  {s.description}
-                </p>
+                <div className="grid gap-2">
+                  <label htmlFor="resume-email" className="text-sm font-medium text-teal-900 dark:text-teal-100">Email</label>
+                  <input
+                    id="resume-email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className={baseFieldClassName}
+                    value={resumeBasics.email}
+                    onChange={(event) => handleBasicChange('email', event.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2 md:col-span-2">
+                  <label htmlFor="resume-github" className="text-sm font-medium text-teal-900 dark:text-teal-100">GitHub link</label>
+                  <input
+                    id="resume-github"
+                    name="github"
+                    type="url"
+                    placeholder="https://github.com/username"
+                    className={baseFieldClassName}
+                    value={resumeBasics.github}
+                    onChange={(event) => handleBasicChange('github', event.target.value)}
+                  />
+                </div>
               </div>
-            ))}
+
+              <div className="grid gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="resume-work-company-0" className="text-sm font-medium text-teal-900 dark:text-teal-100">Work history</label>
+                  <button
+                    type="button"
+                    className={addButtonClassName}
+                    onClick={addWorkEntry}
+                  >
+                    Add another role
+                  </button>
+                </div>
+                <div className="grid gap-4">
+                  {workHistoryEntries.map((entry, index) => (
+                    <div
+                      key={'work-history-' + index}
+                      className="grid gap-4 rounded-xl border border-teal-100/70 bg-white/70 p-4 shadow-sm dark:border-teal-900/50 dark:bg-slate-900/40"
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                        <div className="grid gap-2">
+                          <label htmlFor={'resume-work-company-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Company name</label>
+                          <input
+                            id={'resume-work-company-' + index}
+                            name={'workHistory[' + index + '].company'}
+                            type="text"
+                            placeholder="Acme Corp"
+                            className={baseFieldClassName}
+                            value={entry.company}
+                            onChange={(event) => handleWorkEntryChange(index, 'company', event.target.value)}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <label htmlFor={'resume-work-dates-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Date range</label>
+                          <input
+                            id={'resume-work-dates-' + index}
+                            name={'workHistory[' + index + '].dateRange'}
+                            type="text"
+                            placeholder="Jan 2022 - Present"
+                            className={baseFieldClassName}
+                            value={entry.dateRange}
+                            onChange={(event) => handleWorkEntryChange(index, 'dateRange', event.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label htmlFor={'resume-work-description-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">What you did there</label>
+                        <textarea
+                          id={'resume-work-description-' + index}
+                          name={'workHistory[' + index + '].description'}
+                          placeholder="Summarize your impact, responsibilities, and measurable outcomes..."
+                          className={tallTextAreaClassName}
+                          value={entry.description}
+                          onChange={(event) => handleWorkEntryChange(index, 'description', event.target.value)}
+                        />
+                      </div>
+                      {workHistoryEntries.length > 1 ? (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            className={removeButtonClassName}
+                            onClick={() => removeWorkEntry(index)}
+                          >
+                            Remove role
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="resume-project-title-0" className="text-sm font-medium text-teal-900 dark:text-teal-100">Projects</label>
+                  <button
+                    type="button"
+                    className={addButtonClassName}
+                    onClick={addProjectEntry}
+                  >
+                    Add another project
+                  </button>
+                </div>
+                <div className="grid gap-4">
+                  {projectEntries.map((entry, index) => (
+                    <div
+                      key={'project-' + index}
+                      className="grid gap-4 rounded-xl border border-teal-100/70 bg-white/70 p-4 shadow-sm dark:border-teal-900/50 dark:bg-slate-900/40"
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                        <div className="grid gap-2">
+                          <label htmlFor={'resume-project-title-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Project title</label>
+                          <input
+                            id={'resume-project-title-' + index}
+                            name={'projects[' + index + '].title'}
+                            type="text"
+                            placeholder="Project Phoenix"
+                            className={baseFieldClassName}
+                            value={entry.title}
+                            onChange={(event) => handleProjectEntryChange(index, 'title', event.target.value)}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <label htmlFor={'resume-project-link-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Project link</label>
+                          <input
+                            id={'resume-project-link-' + index}
+                            name={'projects[' + index + '].link'}
+                            type="url"
+                            placeholder="https://example.com"
+                            className={baseFieldClassName}
+                            value={entry.link}
+                            onChange={(event) => handleProjectEntryChange(index, 'link', event.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label htmlFor={'resume-project-description-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Project description</label>
+                        <textarea
+                          id={'resume-project-description-' + index}
+                          name={'projects[' + index + '].description'}
+                          placeholder="Outline your role, stack, and measurable results..."
+                          className={tallTextAreaClassName}
+                          value={entry.description}
+                          onChange={(event) => handleProjectEntryChange(index, 'description', event.target.value)}
+                        />
+                      </div>
+                      {projectEntries.length > 1 ? (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            className={removeButtonClassName}
+                            onClick={() => removeProjectEntry(index)}
+                          >
+                            Remove project
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="resume-achievement-title-0" className="text-sm font-medium text-teal-900 dark:text-teal-100">Achievements</label>
+                  <button
+                    type="button"
+                    className={addButtonClassName}
+                    onClick={addAchievementEntry}
+                  >
+                    Add another achievement
+                  </button>
+                </div>
+                <div className="grid gap-4">
+                  {achievementEntries.map((entry, index) => (
+                    <div
+                      key={'achievement-' + index}
+                      className="grid gap-4 rounded-xl border border-teal-100/70 bg-white/70 p-4 shadow-sm dark:border-teal-900/50 dark:bg-slate-900/40"
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                        <div className="grid gap-2">
+                          <label htmlFor={'resume-achievement-title-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Award title</label>
+                          <input
+                            id={'resume-achievement-title-' + index}
+                            name={'achievements[' + index + '].title'}
+                            type="text"
+                            placeholder="Best in Show"
+                            className={baseFieldClassName}
+                            value={entry.title}
+                            onChange={(event) => handleAchievementEntryChange(index, 'title', event.target.value)}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <label htmlFor={'resume-achievement-link-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Award link</label>
+                          <input
+                            id={'resume-achievement-link-' + index}
+                            name={'achievements[' + index + '].link'}
+                            type="url"
+                            placeholder="https://example.com/award"
+                            className={baseFieldClassName}
+                            value={entry.link}
+                            onChange={(event) => handleAchievementEntryChange(index, 'link', event.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label htmlFor={'resume-achievement-description-' + index} className="text-sm font-medium text-teal-900 dark:text-teal-100">Award description</label>
+                        <textarea
+                          id={'resume-achievement-description-' + index}
+                          name={'achievements[' + index + '].description'}
+                          placeholder="Share the context, judges, and measurable results..."
+                          className={compactTextAreaClassName}
+                          value={entry.description}
+                          onChange={(event) => handleAchievementEntryChange(index, 'description', event.target.value)}
+                        />
+                      </div>
+                      {achievementEntries.length > 1 ? (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            className={removeButtonClassName}
+                            onClick={() => removeAchievementEntry(index)}
+                          >
+                            Remove achievement
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-lg bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/20 transition hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
+                >
+                  Save resume details
+                </button>
+              </div>
+            </form>
+            <div className="mt-12 border-t border-teal-100/60 dark:border-teal-900/50 pt-10">
+              <h3 className="text-2xl font-semibold text-teal-900 dark:text-teal-100">Resume preview</h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">See how your resume is shaping up as you make edits.</p>
+              <div className="mt-8 rounded-xl border border-teal-100/60 dark:border-teal-900/60 bg-white/80 dark:bg-slate-950/30 p-6 shadow-sm">
+                {previewHasContent ? (
+                  <div className="space-y-8 text-left text-slate-800 dark:text-slate-100">
+                    <header className="space-y-2">
+                      <h4 className="text-xl font-semibold text-teal-900 dark:text-teal-100">
+                        {resumeBasics.name || 'Add your name to personalize this preview'}
+                      </h4>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
+                        {hasContent(resumeBasics.email) ? (
+                          <span>{resumeBasics.email}</span>
+                        ) : (
+                          <span className="opacity-60">email@example.com</span>
+                        )}
+                        {hasContent(resumeBasics.github) ? (
+                          <a
+                            className="text-teal-700 hover:underline dark:text-teal-200"
+                            href={formatUrl(resumeBasics.github)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {resumeBasics.github}
+                          </a>
+                        ) : (
+                          <span className="opacity-60">github.com/username</span>
+                        )}
+                      </div>
+                    </header>
+
+                    <section className="space-y-3">
+                      <h5 className="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Work Experience</h5>
+                      {normalizedWorkEntries.length > 0 ? (
+                        <div className="space-y-4">
+                          {normalizedWorkEntries.map((entry, index) => (
+                            <div key={'work-preview-' + index} className="space-y-1">
+                              <div className="flex flex-wrap items-baseline gap-2">
+                                <span className="font-semibold">
+                                  {entry.company || 'Company name'}
+                                </span>
+                                {hasContent(entry.dateRange) ? (
+                                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                                    {entry.dateRange}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                {entry.description || 'Summarize your impact, responsibilities, and measurable results...'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Add roles to showcase your experience.</p>
+                      )}
+                    </section>
+
+                    <section className="space-y-3">
+                      <h5 className="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Projects</h5>
+                      {normalizedProjectEntries.length > 0 ? (
+                        <div className="space-y-4">
+                          {normalizedProjectEntries.map((entry, index) => (
+                            <div key={'project-preview-' + index} className="space-y-1">
+                              <div className="flex flex-wrap items-baseline gap-2">
+                                <span className="font-semibold">
+                                  {entry.title || 'Project title'}
+                                </span>
+                                {hasContent(entry.link) ? (
+                                  <a
+                                    className="text-sm text-teal-700 hover:underline dark:text-teal-200"
+                                    href={formatUrl(entry.link)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {entry.link}
+                                  </a>
+                                ) : null}
+                              </div>
+                              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                {entry.description || 'Outline your role, stack, and measurable results...'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Highlight key projects to display your skills.</p>
+                      )}
+                    </section>
+
+                    <section className="space-y-3">
+                      <h5 className="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Achievements</h5>
+                      {normalizedAchievementEntries.length > 0 ? (
+                        <div className="space-y-4">
+                          {normalizedAchievementEntries.map((entry, index) => (
+                            <div key={'achievement-preview-' + index} className="space-y-1">
+                              <div className="flex flex-wrap items-baseline gap-2">
+                                <span className="font-semibold">
+                                  {entry.title || 'Award title'}
+                                </span>
+                                {hasContent(entry.link) ? (
+                                  <a
+                                    className="text-sm text-teal-700 hover:underline dark:text-teal-200"
+                                    href={formatUrl(entry.link)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {entry.link}
+                                  </a>
+                                ) : null}
+                              </div>
+                              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                {entry.description || 'Describe the recognition and why it matters.'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Add awards or certifications to round out your achievements.</p>
+                      )}
+                    </section>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-teal-200/70 bg-white/60 p-6 text-sm text-slate-500 dark:border-teal-900/60 dark:bg-slate-950/20 dark:text-slate-400">
+                    Start filling in the resume fields to see a live preview appear here.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
       </div>
