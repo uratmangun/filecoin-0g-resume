@@ -43,10 +43,10 @@ const farcasterConfig = getFarcasterConfig();
 
 export const metadata: Metadata = {
   title: {
-    default: 'Farcaster Mini App',
-    template: '%s | Farcaster Mini App',
+    default: 'Filecoin and 0g resume generator and ai analyzer',
+    template: '%s | Filecoin and 0g resume generator and ai analyzer',
   },
-  description: 'A Farcaster mini app built with Next.js and deployed on Cloudflare Pages',
+  description: 'make a resume and analyze it against a job description the ai will give you an advice and what you need to add so that your hiring probability getting higher',
   keywords: ['Farcaster', 'Mini App', 'Web3', 'Social', 'Decentralized'],
   authors: [{ name: 'Your Name' }],
   creator: 'Your Name',
