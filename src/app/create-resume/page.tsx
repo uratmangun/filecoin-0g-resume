@@ -1,206 +1,10 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { sdk } from '@farcaster/miniapp-sdk';
 
-type ProjectEntry = {
-  title: string;
-  link: string;
-  description: string;
-};
-
-type AchievementEntry = {
-  title: string;
-  link: string;
-  description: string;
-};
-
-type WorkEntry = {
-  company: string;
-  dateRange: string;
-  description: string;
-};
-
-type ResumeBasics = {
-  name: string;
-  email: string;
-  github: string;
-};
-
-type ResumeData = {
-  basics: ResumeBasics;
-  workHistory: WorkEntry[];
-  projects: ProjectEntry[];
-  achievements: AchievementEntry[];
-  savedAt?: string;
-};
-
-const RESUME_DB_NAME = 'resume-builder';
-const RESUME_STORE_NAME = 'resumes';
-const RESUME_RECORD_KEY = 'current-resume';
-
-const createEmptyBasics = (): ResumeBasics => ({
-  name: '',
-  email: '',
-  github: ''
-});
-
-const createEmptyWorkEntry = (): WorkEntry => ({
-  company: '',
-  dateRange: '',
-  description: ''
-});
-
-const createEmptyProjectEntry = (): ProjectEntry => ({
-  title: '',
-  link: '',
-  description: ''
-});
-
-const createEmptyAchievementEntry = (): AchievementEntry => ({
-  title: '',
-  link: '',
-  description: ''
-});
-
-const hydrateList = <T extends Record<string, unknown>>(entries: T[] | undefined, createEntry: () => T) => {
-  if (!entries || entries.length === 0) {
-    return [createEntry()];
-  }
-
-  return entries.map((entry) => ({
-    ...createEntry(),
-    ...entry
-  }));
-};
-
-const isIndexedDbAvailable = () =>
-  typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
-
-const openResumeDatabase = (): Promise<IDBDatabase> => {
-  if (!isIndexedDbAvailable()) {
-    return Promise.reject(new Error('IndexedDB is not available in this environment.'));
-  }
-
-  return new Promise((resolve, reject) => {
-    const request = window.indexedDB.open(RESUME_DB_NAME, 1);
-
-    request.onerror = () => {
-      reject(request.error ?? new Error('Failed to open the resume database.'));
-    };
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(RESUME_STORE_NAME)) {
-        db.createObjectStore(RESUME_STORE_NAME);
-      }
-    };
-
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-  });
-};
-
-const readStoredResume = async (): Promise<ResumeData | null> => {
-  if (!isIndexedDbAvailable()) {
-    return null;
-  }
-
-  const db = await openResumeDatabase();
-
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const transaction = db.transaction(RESUME_STORE_NAME, 'readonly');
-    const store = transaction.objectStore(RESUME_STORE_NAME);
-    const request = store.get(RESUME_RECORD_KEY);
-
-    request.onsuccess = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      resolve((request.result as ResumeData | undefined) ?? null);
-    };
-
-    request.onerror = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      reject(request.error ?? new Error('Failed to read resume data.'));
-    };
-
-    transaction.oncomplete = () => {
-      db.close();
-    };
-
-    transaction.onabort = () => {
-      db.close();
-      if (settled) {
-        return;
-      }
-      settled = true;
-      reject(transaction.error ?? new Error('Reading resume data was aborted.'));
-    };
-
-    transaction.onerror = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      reject(transaction.error ?? new Error('Failed to read resume data.'));
-    };
-  });
-};
-
-const writeStoredResume = async (data: ResumeData) => {
-  if (!isIndexedDbAvailable()) {
-    throw new Error('IndexedDB is not available in this environment.');
-  }
-
-  const db = await openResumeDatabase();
-
-  return new Promise<void>((resolve, reject) => {
-    let settled = false;
-    const transaction = db.transaction(RESUME_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(RESUME_STORE_NAME);
-    const request = store.put(data, RESUME_RECORD_KEY);
-
-    request.onerror = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      reject(request.error ?? new Error('Failed to save resume data.'));
-    };
-
-    transaction.oncomplete = () => {
-      db.close();
-      if (!settled) {
-        settled = true;
-        resolve();
-      }
-    };
-
-    transaction.onabort = () => {
-      db.close();
-      if (settled) {
-        return;
-      }
-      settled = true;
-      reject(transaction.error ?? new Error('Saving resume data was aborted.'));
-    };
-
-    transaction.onerror = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      reject(transaction.error ?? new Error('Failed to save resume data.'));
-    };
-  });
-};
+import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
 
 const formatSavedAt = (isoTimestamp: string) => {
   const parsed = new Date(isoTimestamp);
@@ -408,6 +212,9 @@ export default function CreateResumePage() {
   const removeButtonClassName =
     'self-end text-xs font-medium text-teal-700 underline-offset-2 hover:text-teal-600 hover:underline dark:text-teal-200 dark:hover:text-teal-100';
 
+  const printViewLinkClassName =
+    'inline-flex items-center justify-center gap-2 rounded-lg border border-teal-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-teal-700 shadow-sm transition hover:border-teal-300 hover:text-teal-600 dark:border-teal-800/60 dark:bg-slate-950/40 dark:text-teal-200 dark:hover:border-teal-700 dark:hover:text-teal-100';
+
 
   const hasContent = (value: string) => value.trim().length > 0;
   const normalizedWorkEntries = workHistoryEntries.filter((entry) =>
@@ -577,7 +384,9 @@ export default function CreateResumePage() {
                             Remove role
                           </button>
                         </div>
-                      ) : null}
+                      ) : (
+                    <span>Printable view uses your last saved resume data.</span>
+                  )}
                     </div>
                   ))}
                 </div>
@@ -723,7 +532,7 @@ export default function CreateResumePage() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-start justify-end gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <div className="flex flex-col items-start gap-3 sm:items-end">
                 <button
                   type="submit"
                   className="inline-flex items-center justify-center rounded-lg bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/20 transition hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -731,7 +540,15 @@ export default function CreateResumePage() {
                 >
                   {isSaving ? 'Saving...' : 'Save resume to this browser'}
                 </button>
-                <div className="min-h-[1.25rem] text-sm">
+                <Link
+                  href="/create-resume/print"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={printViewLinkClassName}
+                >
+                  Open printable resume
+                </Link>
+                <div className="min-h-[1.25rem] text-sm text-slate-600 dark:text-slate-300 sm:text-right">
                   {persistenceMessage ? (
                     <span
                       className={
@@ -744,7 +561,9 @@ export default function CreateResumePage() {
                     >
                       {persistenceMessage.text}
                     </span>
-                  ) : null}
+                  ) : (
+                    <span>Printable view uses your last saved resume data.</span>
+                  )}
                 </div>
               </div>
             </form>
