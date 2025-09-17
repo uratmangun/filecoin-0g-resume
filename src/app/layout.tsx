@@ -43,11 +43,11 @@ const farcasterConfig = getFarcasterConfig();
 
 export const metadata: Metadata = {
   title: {
-    default: 'Web3 resume generator and AI analyzer',
-    template: '%s | Web3 resume generator and AI analyzer',
+    default: 'Resume generator and AI analyzer',
+    template: '%s | Resume generator and AI analyzer',
   },
   description: 'make a resume and analyze it against a job description the ai will give you an advice and what you need to add so that your hiring probability getting higher',
-  keywords: ['Farcaster', 'Mini App', 'Web3', 'Social', 'Decentralized'],
+  keywords: ['Resume', 'Career', 'Job Search', 'AI', 'Analyzer'],
   authors: [{ name: 'Your Name' }],
   creator: 'Your Name',
   publisher: 'Your Company',

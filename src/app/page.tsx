@@ -8,7 +8,7 @@ const featureCards = [
   {
     title: 'AI-backed analysis',
     description:
-      'Upload your job description and get instant feedback on how your experience aligns with Filecoin and 0g opportunities.'
+      'Upload your job description and get instant feedback on how your experience aligns with roles across industries.'
   },
   {
     title: 'Tailored resume builder',
@@ -18,12 +18,12 @@ const featureCards = [
   {
     title: 'Actionable recommendations',
     description:
-      'See what to highlight or expand so each application stands out in decentralized data and compute.'
+      'See what to highlight or expand so each application stands out in any industry.'
   },
   {
-    title: 'Decentralized storage & compute',
+    title: 'Decentralized storage & AI compute',
     description:
-      'Your data is saved decentrally on Filecoin, and AI computations run on 0g to keep analysis decentralized.'
+      'We save your resume data to Filecoin decentralized storage and use 0g decentralized AI for compute.'
   }
 ];
 
@@ -40,11 +40,11 @@ export default function Home() {
     <main className={'min-h-screen bg-gradient-to-br from-teal-500 to-teal-400 dark:from-teal-900 dark:to-teal-800'}>
       <div className={'mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16 text-center text-white'}>
         <header className={'space-y-6'}>
-          <span className={'mx-auto inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white/80 backdrop-blur'}>Web3 career coaches
+          <span className={'mx-auto inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white/80 backdrop-blur'}>CAREER COACHES
           </span>
           <h1 className={'text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl'}>Craft a future-proof resume and get guidance in minutes
           </h1>
-          <p className={'mx-auto max-w-2xl text-base text-white/90 sm:text-lg'}>Start with a polished resume, then let our AI highlight the skills, metrics, and proof points that matter for decentralized compute roles.
+          <p className={'mx-auto max-w-2xl text-base text-white/90 sm:text-lg'}>Start with a polished resume, then let our AI highlight the skills, metrics, and proof points that matter for the roles you’re targeting.
           </p>
         </header>
 
