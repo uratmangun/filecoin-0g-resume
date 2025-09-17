@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { sdk } from '@farcaster/miniapp-sdk';
 
-import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
+import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, createSavedResume, listSavedResumes, readSavedResume, updateSavedResume, deleteSavedResume, type SavedResumeEntry, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
 
 const formatSavedAt = (isoTimestamp: string) => {
   const parsed = new Date(isoTimestamp);
@@ -26,6 +26,33 @@ export default function CreateResumePage() {
     initializeSdk();
   }, []);
 
+  useEffect(() => {
+    let isCancelled = false;
+    const loadList = async () => {
+      setIsListLoading(true);
+      try {
+        const list = await listSavedResumes();
+        if (!isCancelled) {
+          setSavedResumes(list);
+          setListErrorMessage(null);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error('Failed to load saved resumes list', error);
+          setListErrorMessage('We could not load your saved resumes.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsListLoading(false);
+        }
+      }
+    };
+    loadList();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const [resumeBasics, setResumeBasics] = useState<ResumeBasics>(createEmptyBasics());
   const [workHistoryEntries, setWorkHistoryEntries] = useState<WorkEntry[]>([createEmptyWorkEntry()]);
   const [projectEntries, setProjectEntries] = useState<ProjectEntry[]>([createEmptyProjectEntry()]);
@@ -35,6 +62,11 @@ export default function CreateResumePage() {
   const [saveErrorMessage, setSaveErrorMessage] = useState('');
   const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string | null>(null);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
+  const [savedResumes, setSavedResumes] = useState<SavedResumeEntry[]>([]);
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [listErrorMessage, setListErrorMessage] = useState<string | null>(null);
+  const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -184,22 +216,101 @@ export default function CreateResumePage() {
     const timestamp = new Date().toISOString();
 
     try {
-      await writeStoredResume({
+      const data = {
         basics: { ...resumeBasics },
         workHistory: workHistoryEntries.map((entry) => ({ ...entry })),
         projects: projectEntries.map((entry) => ({ ...entry })),
         achievements: achievementEntries.map((entry) => ({ ...entry })),
         savedAt: timestamp
-      });
+      };
 
+      // Keep legacy single-snapshot for printable view
+      await writeStoredResume(data);
+      // Create a new saved resume entry
+      const created = await createSavedResume(data, resumeBasics.name);
+      setSelectedResumeId(created.id);
       setSaveStatus('success');
       setLastSavedTimestamp(timestamp);
+      // Refresh list
+      const list = await listSavedResumes();
+      setSavedResumes(list);
     } catch (error) {
       console.error('Failed to save resume to IndexedDB', error);
       setSaveStatus('error');
       setSaveErrorMessage('We could not save your resume locally. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleUpdateSelectedResume = async () => {
+    if (!selectedResumeId) return;
+    if (!isIndexedDbAvailable()) {
+      setSaveStatus('error');
+      setSaveErrorMessage('Saving is not supported in this browser.');
+      return;
+    }
+    setIsUpdating(true);
+    setSaveStatus('saving');
+    setSaveErrorMessage('');
+    const timestamp = new Date().toISOString();
+    try {
+      const data = {
+        basics: { ...resumeBasics },
+        workHistory: workHistoryEntries.map((entry) => ({ ...entry })),
+        projects: projectEntries.map((entry) => ({ ...entry })),
+        achievements: achievementEntries.map((entry) => ({ ...entry })),
+        savedAt: timestamp
+      };
+      await writeStoredResume(data);
+      await updateSavedResume(selectedResumeId, data, resumeBasics.name);
+      setSaveStatus('success');
+      setLastSavedTimestamp(timestamp);
+      const list = await listSavedResumes();
+      setSavedResumes(list);
+    } catch (error) {
+      console.error('Failed to update resume', error);
+      setSaveStatus('error');
+      setSaveErrorMessage('We could not update your saved resume. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleLoadFromList = async (id: string) => {
+    try {
+      const entry = await readSavedResume(id);
+      if (!entry) {
+        return;
+      }
+      setSelectedResumeId(id);
+      const stored = entry.data;
+      setResumeBasics({
+        ...createEmptyBasics(),
+        ...(stored.basics ?? {})
+      });
+      setWorkHistoryEntries(hydrateList(stored.workHistory, createEmptyWorkEntry));
+      setProjectEntries(hydrateList(stored.projects, createEmptyProjectEntry));
+      setAchievementEntries(hydrateList(stored.achievements, createEmptyAchievementEntry));
+      setLastSavedTimestamp(stored.savedAt ?? null);
+      setLoadErrorMessage(null);
+    } catch (error) {
+      console.error('Failed to load the selected resume', error);
+      setLoadErrorMessage('We could not load that saved resume.');
+    }
+  };
+
+  const handleDeleteFromList = async (id: string) => {
+    try {
+      await deleteSavedResume(id);
+      const list = await listSavedResumes();
+      setSavedResumes(list);
+      if (selectedResumeId === id) {
+        setSelectedResumeId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete resume', error);
+      setListErrorMessage('We could not delete that resume.');
     }
   };
 
@@ -540,6 +651,14 @@ export default function CreateResumePage() {
                 >
                   {isSaving ? 'Saving...' : 'Save resume to this browser'}
                 </button>
+                <button
+                  type="button"
+                  onClick={handleUpdateSelectedResume}
+                  className="inline-flex items-center justify-center rounded-lg bg-teal-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/20 transition hover:bg-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isUpdating || !selectedResumeId}
+                >
+                  {isUpdating ? 'Updating...' : 'Update selected resume'}
+                </button>
                 <Link
                   href="/create-resume/print"
                   target="_blank"
@@ -566,6 +685,57 @@ export default function CreateResumePage() {
                   )}
                 </div>
               </div>
+            {/* Saved resumes list */}
+            <div className="mt-10">
+              <h3 className="text-2xl font-semibold text-teal-900 dark:text-teal-100">Saved resumes</h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Select a saved resume to load it into the editor. You can update the selected resume with the button above.</p>
+              {listErrorMessage ? (
+                <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{listErrorMessage}</div>
+              ) : null}
+              <div className="mt-4 grid gap-3">
+                {isListLoading ? (
+                  <div className="text-sm text-slate-500">Loading saved resumes…</div>
+                ) : savedResumes.length === 0 ? (
+                  <div className="text-sm text-slate-500">No saved resumes yet. Press "Save resume to this browser" to create one.</div>
+                ) : (
+                  <ul className="divide-y divide-teal-100/60 dark:divide-teal-900/50 rounded-xl border border-teal-100/60 dark:border-teal-900/50 bg-white/80 dark:bg-slate-950/30">
+                    {savedResumes.map((item) => (
+                      <li key={item.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name="selectedResume"
+                            className="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500"
+                            checked={selectedResumeId === item.id}
+                            onChange={() => setSelectedResumeId(item.id)}
+                          />
+                          <div>
+                            <div className="font-medium text-teal-900 dark:text-teal-100">{item.title || 'Untitled resume'}</div>
+                            <div className="text-xs text-slate-500">Updated {formatSavedAt(item.updatedAt) || item.updatedAt}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className={printViewLinkClassName}
+                            onClick={() => handleLoadFromList(item.id)}
+                          >
+                            Load into editor
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600 dark:border-rose-900/60 dark:bg-slate-950/40 dark:text-rose-300"
+                            onClick={() => handleDeleteFromList(item.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
             </form>
             <div className="mt-12 border-t border-teal-100/60 dark:border-teal-900/50 pt-10">
               <h3 className="text-2xl font-semibold text-teal-900 dark:text-teal-100">Resume preview</h3>
