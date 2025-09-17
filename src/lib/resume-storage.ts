@@ -38,6 +38,57 @@ const RESUME_RECORD_KEY = 'current-resume';
 const RESUME_LIST_STORE_NAME = 'resume-items';
 const RESUME_DB_VERSION = 2;
 
+// A fixed ID for the built-in sample resume entry
+export const SAMPLE_RESUME_ID = 'sample-resume-readonly';
+
+// Sample resume content used for preview and as a non-deletable list item
+export const getSampleResumeData = (): ResumeData => ({
+  basics: {
+    name: 'Jordan Lee',
+    email: 'jordan.lee@example.com',
+    github: 'github.com/jordanlee'
+  },
+  workHistory: [
+    {
+      company: 'Delta Compute Labs',
+      dateRange: '2023 — Present',
+      description:
+        'Built distributed data pipelines and optimized decentralized compute workflows.'
+    },
+    {
+      company: 'Atlas Data Systems',
+      dateRange: '2021 — 2023',
+      description:
+        'Led a team shipping an AI-backed analytics tool with measurable performance gains.'
+    }
+  ],
+  projects: [
+    {
+      title: 'IPFS Photo Vault',
+      link: 'github.com/jordanlee/ipfs-photo-vault',
+      description:
+        'End-to-end encrypted photo storage on IPFS/Filecoin with a sleek web UI.'
+    },
+    {
+      title: '0g Inference Service',
+      link: 'github.com/jordanlee/0g-inference',
+      description:
+        'Prototype inference microservice that executes models on 0g decentralized compute.'
+    }
+  ],
+  achievements: [
+    {
+      title: 'Hackathon Winner',
+      link: 'https://example.com/hackathon',
+      description:
+        'First place for building a decentralized AI data pipeline in 48 hours.'
+    }
+  ],
+  savedAt: new Date().toISOString()
+});
+
+export const isSampleResumeId = (id: string) => id === SAMPLE_RESUME_ID;
+
 export const createEmptyBasics = (): ResumeBasics => ({
   name: '',
   email: '',
@@ -184,7 +235,17 @@ export const createSavedResume = async (
 
 export const listSavedResumes = async (): Promise<SavedResumeEntry[]> => {
   if (!isIndexedDbAvailable()) {
-    return [];
+    // Even if IndexedDB is unavailable, still provide the sample resume entry
+    const now = new Date().toISOString();
+    return [
+      {
+        id: SAMPLE_RESUME_ID,
+        title: 'Sample resume (read-only)',
+        data: getSampleResumeData(),
+        createdAt: now,
+        updatedAt: now
+      }
+    ];
   }
 
   const db = await openResumeDatabase();
@@ -200,7 +261,17 @@ export const listSavedResumes = async (): Promise<SavedResumeEntry[]> => {
         if (settled) return;
         settled = true;
         const list = (getAll as IDBRequest).result as SavedResumeEntry[];
-        resolve([...list].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')));
+        const now = new Date().toISOString();
+        const sample: SavedResumeEntry = {
+          id: SAMPLE_RESUME_ID,
+          title: 'Sample resume (read-only)',
+          data: getSampleResumeData(),
+          createdAt: now,
+          updatedAt: now
+        };
+        const userItems = [...list].filter((e) => e.id !== SAMPLE_RESUME_ID);
+        const sorted = userItems.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+        resolve([sample, ...sorted]);
       };
       (getAll as IDBRequest).onerror = () => {
         if (settled) return;
@@ -218,7 +289,17 @@ export const listSavedResumes = async (): Promise<SavedResumeEntry[]> => {
         } else {
           if (settled) return;
           settled = true;
-          resolve(items.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')));
+          const now = new Date().toISOString();
+          const sample: SavedResumeEntry = {
+            id: SAMPLE_RESUME_ID,
+            title: 'Sample resume (read-only)',
+            data: getSampleResumeData(),
+            createdAt: now,
+            updatedAt: now
+          };
+          const userItems = items.filter((e) => e.id !== SAMPLE_RESUME_ID);
+          const sorted = userItems.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+          resolve([sample, ...sorted]);
         }
       };
       (req as IDBRequest).onerror = () => {
@@ -248,6 +329,16 @@ export const listSavedResumes = async (): Promise<SavedResumeEntry[]> => {
 };
 
 export const readSavedResume = async (id: string): Promise<SavedResumeEntry | null> => {
+  if (isSampleResumeId(id)) {
+    const now = new Date().toISOString();
+    return {
+      id: SAMPLE_RESUME_ID,
+      title: 'Sample resume (read-only)',
+      data: getSampleResumeData(),
+      createdAt: now,
+      updatedAt: now
+    };
+  }
   if (!isIndexedDbAvailable()) {
     return null;
   }
@@ -357,6 +448,9 @@ export const updateSavedResume = async (
 };
 
 export const deleteSavedResume = async (id: string): Promise<void> => {
+  if (isSampleResumeId(id)) {
+    throw new Error('The sample resume cannot be deleted.');
+  }
   if (!isIndexedDbAvailable()) {
     throw new Error('IndexedDB is not available in this environment.');
   }

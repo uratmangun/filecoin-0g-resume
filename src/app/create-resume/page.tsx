@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { sdk } from '@farcaster/miniapp-sdk';
 
-import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, createSavedResume, listSavedResumes, readSavedResume, updateSavedResume, deleteSavedResume, type SavedResumeEntry, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
+import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, createSavedResume, listSavedResumes, readSavedResume, updateSavedResume, deleteSavedResume, SAMPLE_RESUME_ID, getSampleResumeData, isSampleResumeId, type SavedResumeEntry, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
 
 const formatSavedAt = (isoTimestamp: string) => {
   const parsed = new Date(isoTimestamp);
@@ -19,6 +20,7 @@ const formatSavedAt = (isoTimestamp: string) => {
 };
 
 export default function CreateResumePage() {
+  const router = useRouter();
   useEffect(() => {
     const initializeSdk = async () => {
       await sdk.actions.ready();
@@ -74,25 +76,38 @@ export default function CreateResumePage() {
     const loadResumeFromStorage = async () => {
       try {
         const stored = await readStoredResume();
-        if (!stored || isCancelled) {
+        if (isCancelled) {
           return;
         }
-
-        setResumeBasics({
-          ...createEmptyBasics(),
-          ...(stored.basics ?? {})
-        });
-        setWorkHistoryEntries(
-          hydrateList(stored.workHistory, createEmptyWorkEntry)
-        );
-        setProjectEntries(
-          hydrateList(stored.projects, createEmptyProjectEntry)
-        );
-        setAchievementEntries(
-          hydrateList(stored.achievements, createEmptyAchievementEntry)
-        );
-        setLastSavedTimestamp(stored.savedAt ?? null);
-        setLoadErrorMessage(null);
+        if (!stored) {
+          // No saved snapshot yet — load sample data for preview only (do not persist)
+          const sample = getSampleResumeData();
+          setResumeBasics({
+            ...createEmptyBasics(),
+            ...(sample.basics ?? {})
+          });
+          setWorkHistoryEntries(hydrateList(sample.workHistory, createEmptyWorkEntry));
+          setProjectEntries(hydrateList(sample.projects, createEmptyProjectEntry));
+          setAchievementEntries(hydrateList(sample.achievements, createEmptyAchievementEntry));
+          setLastSavedTimestamp(null);
+          setLoadErrorMessage(null);
+        } else {
+          setResumeBasics({
+            ...createEmptyBasics(),
+            ...(stored.basics ?? {})
+          });
+          setWorkHistoryEntries(
+            hydrateList(stored.workHistory, createEmptyWorkEntry)
+          );
+          setProjectEntries(
+            hydrateList(stored.projects, createEmptyProjectEntry)
+          );
+          setAchievementEntries(
+            hydrateList(stored.achievements, createEmptyAchievementEntry)
+          );
+          setLastSavedTimestamp(stored.savedAt ?? null);
+          setLoadErrorMessage(null);
+        }
       } catch (error) {
         if (isCancelled) {
           return;
@@ -386,6 +401,30 @@ export default function CreateResumePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-500 to-teal-400 dark:from-teal-900 dark:to-teal-800 flex items-start justify-center">
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            router.back();
+          } else {
+            router.push('/');
+          }
+        }}
+        aria-label="Go back"
+        className="fixed left-4 top-4 z-50 inline-flex items-center gap-2 rounded-lg border border-teal-200/80 bg-white/80 px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm backdrop-blur transition hover:border-teal-300 hover:text-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:border-teal-800/60 dark:bg-slate-950/40 dark:text-teal-200 dark:hover:border-teal-700 dark:hover:text-teal-100"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          className="h-4 w-4"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span className="hidden sm:inline">Back</span>
+      </button>
       <div className="max-w-6xl px-6 md:px-8 pt-6 md:pt-8 pb-16 md:pb-24 mx-auto text-center">
         <section className="mt-12 text-left">
           <div className="rounded-2xl bg-white/90 dark:bg-slate-900/95 border border-teal-100/50 dark:border-teal-900/60 shadow-xl shadow-teal-900/10 px-6 py-8 md:px-8 md:py-10">
@@ -655,7 +694,7 @@ export default function CreateResumePage() {
                   type="button"
                   onClick={handleUpdateSelectedResume}
                   className="inline-flex items-center justify-center rounded-lg bg-teal-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/20 transition hover:bg-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isUpdating || !selectedResumeId}
+                  disabled={isUpdating || !selectedResumeId || selectedResumeId === SAMPLE_RESUME_ID}
                 >
                   {isUpdating ? 'Updating...' : 'Update selected resume'}
                 </button>
@@ -710,7 +749,12 @@ export default function CreateResumePage() {
                             onChange={() => setSelectedResumeId(item.id)}
                           />
                           <div>
-                            <div className="font-medium text-teal-900 dark:text-teal-100">{item.title || 'Untitled resume'}</div>
+                            <div className="font-medium text-teal-900 dark:text-teal-100">
+                              {item.title || 'Untitled resume'}
+                              {isSampleResumeId(item.id) ? (
+                                <span className="ml-2 inline-flex items-center rounded-full border border-teal-300/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700 dark:border-teal-800 dark:text-teal-200">Sample</span>
+                              ) : null}
+                            </div>
                             <div className="text-xs text-slate-500">Updated {formatSavedAt(item.updatedAt) || item.updatedAt}</div>
                           </div>
                         </div>
@@ -722,13 +766,15 @@ export default function CreateResumePage() {
                           >
                             Load into editor
                           </button>
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600 dark:border-rose-900/60 dark:bg-slate-950/40 dark:text-rose-300"
-                            onClick={() => handleDeleteFromList(item.id)}
-                          >
-                            Delete
-                          </button>
+                          {isSampleResumeId(item.id) ? null : (
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600 dark:border-rose-900/60 dark:bg-slate-950/40 dark:text-rose-300"
+                              onClick={() => handleDeleteFromList(item.id)}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </li>
                     ))}
