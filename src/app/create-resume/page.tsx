@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { sdk } from '@farcaster/miniapp-sdk';
 
-import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, createSavedResume, listSavedResumes, readSavedResume, updateSavedResume, deleteSavedResume, SAMPLE_RESUME_ID, getSampleResumeData, isSampleResumeId, type SavedResumeEntry, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
+import { createEmptyAchievementEntry, createEmptyBasics, createEmptyProjectEntry, createEmptyWorkEntry, hydrateList, isIndexedDbAvailable, readStoredResume, writeStoredResume, createSavedResume, listSavedResumes, readSavedResume, updateSavedResume, deleteSavedResume, SAMPLE_RESUME_ID, isSampleResumeId, type SavedResumeEntry, type AchievementEntry, type ProjectEntry, type ResumeBasics, type WorkEntry } from '@/lib/resume-storage';
 
 const formatSavedAt = (isoTimestamp: string) => {
   const parsed = new Date(isoTimestamp);
@@ -80,15 +80,11 @@ export default function CreateResumePage() {
           return;
         }
         if (!stored) {
-          // No saved snapshot yet — load sample data for preview only (do not persist)
-          const sample = getSampleResumeData();
-          setResumeBasics({
-            ...createEmptyBasics(),
-            ...(sample.basics ?? {})
-          });
-          setWorkHistoryEntries(hydrateList(sample.workHistory, createEmptyWorkEntry));
-          setProjectEntries(hydrateList(sample.projects, createEmptyProjectEntry));
-          setAchievementEntries(hydrateList(sample.achievements, createEmptyAchievementEntry));
+          // No saved snapshot yet - start from a blank form state
+          setResumeBasics(createEmptyBasics());
+          setWorkHistoryEntries([createEmptyWorkEntry()]);
+          setProjectEntries([createEmptyProjectEntry()]);
+          setAchievementEntries([createEmptyAchievementEntry()]);
           setLastSavedTimestamp(null);
           setLoadErrorMessage(null);
         } else {
@@ -728,6 +724,14 @@ export default function CreateResumePage() {
             <div className="mt-10">
               <h3 className="text-2xl font-semibold text-teal-900 dark:text-teal-100">Saved resumes</h3>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Select a saved resume to load it into the editor. You can update the selected resume with the button above.</p>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  className={printViewLinkClassName}
+                >
+                  connect filecoin
+                </button>
+              </div>
               {listErrorMessage ? (
                 <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{listErrorMessage}</div>
               ) : null}
