@@ -19,6 +19,11 @@ const featureCards = [
     title: 'Actionable recommendations',
     description:
       'See what to highlight or expand so each application stands out in decentralized data and compute.'
+  },
+  {
+    title: 'Decentralized storage & compute',
+    description:
+      'Your data is saved decentrally on Filecoin, and AI computations run on 0g to keep analysis decentralized.'
   }
 ];
 
@@ -35,7 +40,7 @@ export default function Home() {
     <main className={'min-h-screen bg-gradient-to-br from-teal-500 to-teal-400 dark:from-teal-900 dark:to-teal-800'}>
       <div className={'mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16 text-center text-white'}>
         <header className={'space-y-6'}>
-          <span className={'mx-auto inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white/80 backdrop-blur'}>Web3 career coaches powered by Filecoin + 0g
+          <span className={'mx-auto inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white/80 backdrop-blur'}>Web3 career coaches
           </span>
           <h1 className={'text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl'}>Craft a future-proof resume and get guidance in minutes
           </h1>
