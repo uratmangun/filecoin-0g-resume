@@ -93,3 +93,59 @@ end
 function tunnel-db --description "Quick tunnel for database (port 5432)"
     tunnel 5432
 end
+
+# Docker SSH function
+function docker-ssh --description "SSH into Docker container by ID or name"
+    # Check if argument is provided
+    if test (count $argv) -eq 0
+        echo "❌ Error: Container ID or name required"
+        echo ""
+        echo "Usage: docker-ssh <container_id_or_name> [command]"
+        echo ""
+        echo "Examples:"
+        echo "  docker-ssh myapp                    # Connect with /bin/bash"
+        echo "  docker-ssh abc123 /bin/sh          # Connect with /bin/sh"
+        echo "  docker-ssh mycontainer \"ls -la\"   # Execute command"
+        echo ""
+        echo "Available containers:"
+        docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+        return 1
+    end
+    
+    set -l container $argv[1]
+    set -l command "/bin/bash"
+    
+    # If second argument provided, use it as command
+    if test (count $argv) -gt 1
+        set command $argv[2..-1]
+    end
+    
+    # Check if Docker is running
+    if not docker info >/dev/null 2>&1
+        echo "❌ Error: Docker is not running. Please start Docker first."
+        return 1
+    end
+    
+    # Check if container exists and is running
+    set -l container_id (docker ps --filter "name=$container" --filter "id=$container" --format "{{.ID}}")
+    
+    if test -z "$container_id"
+        echo "❌ Error: Container '$container' not found or not running"
+        echo ""
+        echo "Available running containers:"
+        docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+        return 1
+    end
+    
+    echo "🐳 Connecting to container: $container"
+    echo "📡 Running command: $command"
+    echo ""
+    
+    # Connect to container
+    docker exec -it $container_id $command
+end
+
+# Shorter alias for docker-ssh
+function dssh --description "Short alias for docker-ssh"
+    docker-ssh $argv
+end

@@ -1,0 +1,71 @@
+# Development Dockerfile for Next.js app with fish shell, codex, and cloudflared
+FROM node:20-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies and fish shell
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    fish \
+    sudo \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GitHub CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+    apt-get update && apt-get install -y gh && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install cloudflared
+RUN mkdir -p --mode=0755 /usr/share/keyrings && \
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | \
+    tee /etc/apt/sources.list.d/cloudflared.list && \
+    apt-get update && apt-get install -y cloudflared && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install pnpm globally (since the project uses pnpm)
+RUN npm install -g pnpm
+
+# Install codex globally
+RUN npm install -g @openai/codex
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install
+
+# Copy project files
+COPY . .
+
+# Set fish as default shell for development
+RUN chsh -s /usr/bin/fish
+
+# Setup fish configuration directory
+RUN mkdir -p ~/.config/fish
+
+# Copy fish configuration files if they exist
+COPY tunnel.fish /app/tunnel.fish
+RUN echo "source /app/tunnel.fish" >> ~/.config/fish/config.fish
+
+# Expose ports for Next.js dev server and potential tunnel usage
+EXPOSE 3000 8080 5432
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV SHELL=/usr/bin/fish
+
+# Verify installations
+RUN node --version && \
+    pnpm --version && \
+    fish --version && \
+    cloudflared --version && \
+    gh --version
+
+# Default command - start development server
+CMD ["fish", "-c", "pnpm dev"]
