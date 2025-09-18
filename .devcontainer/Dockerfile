@@ -15,7 +15,7 @@ WORKDIR /workspace
 # Copy package files for dependency installation
 COPY --chown=node:node package*.json pnpm-lock.yaml* ./
 
-# Install dependencies (will be run again in postCreateCommand but this caches layers)
+# Install dependencies (will be run again in postCreateCommand but this caches layers)  
 RUN pnpm install --frozen-lockfile
 
 # Expose ports
