@@ -3,10 +3,16 @@ export default function DebugPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="max-w-6xl mx-auto px-6 py-10">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Debug</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Debug
+          </h1>
           <p className="text-slate-600 dark:text-slate-300 mt-2">
-            Quick diagnostics for server and client. Only public env vars are shown.
+            Quick diagnostics for server and client. Only public env vars are
+            shown.
           </p>
+          <button className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
+            Connect Filecoin
+          </button>
         </header>
         {/* Intentionally left blank per request to remove all debug cards */}
       </div>
