@@ -3,7 +3,7 @@
 # Cloudflare Tunnel Quick Setup for Fish Shell
 # Add this function to your ~/.config/fish/config.fish or source this file
 
-function tunnel --description "Start Cloudflare tunnel with Docker for quick port forwarding"
+function tunnel --description "Start Cloudflare tunnel with Docker/Podman for quick port forwarding"
     # Parse arguments
     set -l port 3000
     set -l help_flag false
@@ -31,7 +31,7 @@ function tunnel --description "Start Cloudflare tunnel with Docker for quick por
     if test $help_flag = true
         echo "Usage: tunnel [PORT] [OPTIONS]"
         echo ""
-        echo "Start a Cloudflare tunnel (Docker or local cloudflared) to expose a local port"
+        echo "Start a Cloudflare tunnel (Docker, Podman, or local cloudflared) to expose a local port"
         echo ""
         echo "Arguments:"
         echo "  PORT                Port to forward (default: 3000)"
@@ -50,22 +50,28 @@ function tunnel --description "Start Cloudflare tunnel with Docker for quick por
     end
     
     set -l runner docker
-    # Determine available tunnel runner (Docker or cloudflared)
+    # Determine available tunnel runner (Docker, Podman, or cloudflared)
     if command -q docker
         if not docker info >/dev/null 2>/dev/null
-            if command -q cloudflared
-                echo "⚠️  Docker CLI is installed but not running; using local cloudflared CLI instead"
+            if command -q podman
+                echo "⚠️  Docker is not running; using Podman instead"
+                set runner podman
+            else if command -q cloudflared
+                echo "⚠️  Docker is not running; using local cloudflared CLI instead"
                 set runner cloudflared
             else
-                echo "❌ Error: Docker is not running and cloudflared CLI not found. Start Docker or install cloudflared."
+                echo "❌ Error: Docker is not running, and neither Podman nor cloudflared CLI found. Start Docker or install Podman/cloudflared."
                 return 1
             end
         end
+    else if command -q podman
+        echo "ℹ️  Docker CLI not found; using Podman instead"
+        set runner podman
     else if command -q cloudflared
-        echo "ℹ️  Docker CLI not found; using local cloudflared CLI instead"
+        echo "ℹ️  Docker/Podman not found; using local cloudflared CLI instead"
         set runner cloudflared
     else
-        echo "❌ Error: Neither Docker nor cloudflared CLI is available. Install one of them."
+        echo "❌ Error: Neither Docker, Podman, nor cloudflared CLI is available. Install one of them."
         return 1
     end
     
@@ -93,6 +99,15 @@ function tunnel --description "Start Cloudflare tunnel with Docker for quick por
         docker run --rm -it \
             --network host \
             cloudflare/cloudflared:latest \
+            tunnel --url http://localhost:$port
+    else if test $runner = podman
+        # Run cloudflared tunnel using Podman
+        # Use --rm to automatically remove container when stopped
+        # Use -it for interactive terminal
+        # Podman requires fully qualified image names
+        podman run --rm -it \
+            --network host \
+            docker.io/cloudflare/cloudflared:latest \
             tunnel --url http://localhost:$port
     else if test $runner = cloudflared
         # Use native cloudflared CLI as fallback
